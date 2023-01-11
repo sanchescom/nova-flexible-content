@@ -54,6 +54,15 @@
                             <icon type="arrow-down" class="align-top" width="16" height="16" />
                         </button>
                         <button
+                            v-if="field.attribute === 'content'"
+                            dusk="export-group"
+                            type="button"
+                            class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 block"
+                            :title="__('Export')"
+                            @click.prevent="exportGroup(group)">
+                            <icon type="code" width="16" height="16" />
+                        </button>
+                        <button
                             dusk="visible-group"
                             type="button"
                             class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 block"
@@ -77,6 +86,15 @@
                             :message="field.confirmRemoveMessage"
                             :yes="field.confirmRemoveYes"
                             :no="field.confirmRemoveNo"
+                        />
+
+                        <import-export-flexible-content-group-modal
+                            v-if="isExport"
+                            @close="isExport=false"
+                            :message="exportMessage"
+                            ok="Ok"
+                            :name="group.title"
+                            title="Export group"
                         />
                     </div>
 
@@ -120,6 +138,8 @@ export default {
     data() {
         return {
             removeMessage: false,
+            isExport: false,
+            exportMessage: null,
             collapsed: this.group.collapsed,
             readonly: this.group.readonly,
         };
@@ -167,10 +187,25 @@ export default {
         },
 
         /**
+         * Export the group to clipboard
+         */
+        async exportGroup(group) {
+            try {
+                await navigator.clipboard.writeText(JSON.stringify(group));
+
+                this.exportMessage = "block has been successfully exported";
+            } catch (error) {
+                this.exportMessage = "an error occurred while exporting the block";
+            } finally {
+                this.isExport = true;
+            }
+        },
+
+        /**
          * Toggle visibility
          */
         toggleVisibility() {
-            this.$emit('toggle-visibility'); 
+            this.$emit('toggle-visibility');
         },
 
         /**
@@ -184,10 +219,10 @@ export default {
          * Confirm remove message
          */
         confirmRemove() {
-            if (this.field.confirmRemove){
+            if (this.field.confirmRemove) {
                 this.removeMessage = true;
             } else {
-                this.remove()
+                this.remove();
             }
         },
 
