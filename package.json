@@ -27,5 +27,15 @@
         "sortablejs": "^1.15.0",
         "vue-loader": "^16.8.3",
         "vuex": "^4.0.2"
+    },
+    "resolutions": {
+      "semver": "6.3.1",
+      "axios": "0.30.2",
+      "webpack-dev-server": "5.2.1",
+      "json5": "1.0.2",
+      "postcss": "8.4.31",
+      "nanoid": "3.3.8",
+      "cipher-base": "1.0.5",
+      "sha.js": "2.4.12"
     }
 }
