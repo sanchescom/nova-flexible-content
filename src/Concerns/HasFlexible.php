@@ -120,14 +120,17 @@ trait HasFlexible
         if (is_array($item)) {
             $name = $item['layout'] ?? null;
             $key = $item['key'] ?? null;
+            $visibility = $item['visibility'] ?? true;
             $attributes = (array) ($item['attributes'] ?? []);
         } elseif (is_a($item, \stdClass::class) || is_a($item, Fluent::class)) {
             $name = $item->layout ?? null;
             $key = $item->key ?? null;
+            $visibility = $item->visibility ?? true;
             $attributes = (array) ($item->attributes ?? []);
         } elseif (is_a($item, Layout::class)) {
             $name = $item->name();
             $key = $item->key();
+            $visibility = $item->visibility();
             $attributes = $item->getAttributes();
         }
 
@@ -135,7 +138,7 @@ trait HasFlexible
             return null;
         }
 
-        return $this->createMappedLayout($name, $key, $attributes, $layoutMapping);
+        return $this->createMappedLayout($name, $key, $attributes, $layoutMapping, $visibility);
     }
 
     /**
@@ -145,15 +148,16 @@ trait HasFlexible
      * @param  string  $key
      * @param  array  $attributes
      * @param  array  $layoutMapping
+     * @param bool $visibility
      * @return \Whitecube\NovaFlexibleContent\Layouts\LayoutInterface
      */
-    protected function createMappedLayout($name, $key, $attributes, array $layoutMapping)
+    protected function createMappedLayout($name, $key, $attributes, array $layoutMapping, bool $visibility = true)
     {
         $classname = array_key_exists($name, $layoutMapping)
             ? $layoutMapping[$name]
             : Layout::class;
 
-        $layout = new $classname($name, $name, [], $key, $attributes);
+        $layout = new $classname($name, $name, [], $key, $attributes, null, $visibility);
 
         $model = is_a($this, FlexibleCast::class)
             ? $this->model

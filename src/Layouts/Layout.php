@@ -67,6 +67,13 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
     protected $fields;
 
     /**
+     * The Layout visibility status.
+     *
+     * @var bool
+     */
+    protected $visibility = true;
+
+    /**
      * The attributes that should be cast to native types.
      *
      * @var array
@@ -136,9 +143,10 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
      * @param  array  $attributes
      * @param  callable|null  $removeCallbackMethod
      * @param  int|null  $limit
+     * @param bool $visibility
      * @return void
      */
-    public function __construct($title = null, $name = null, $fields = null, $key = null, $attributes = [], ?callable $removeCallbackMethod = null)
+    public function __construct($title = null, $name = null, $fields = null, $key = null, $attributes = [], ?callable $removeCallbackMethod = null, $visibility = true)
     {
         $this->title = $title ?? $this->title();
         $this->name = $name ?? $this->name();
@@ -146,6 +154,7 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
         $this->key = is_null($key) ? null : $this->getProcessedKey($key);
         $this->removeCallbackMethod = $removeCallbackMethod;
         $this->setRawAttributes($this->cleanAttributes($attributes));
+        $this->visibility = $visibility;
     }
 
     /**
@@ -199,6 +208,16 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
     public function fields()
     {
         return $this->fields ? $this->fields->all() : [];
+    }
+
+    /**
+     * Retrieve the layout's visibility
+     *
+     * @return bool
+     */
+    public function visibility()
+    {
+        return $this->visibility;
     }
 
     /**
@@ -270,9 +289,10 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
      *
      * @param  string  $key
      * @param  array  $attributes
+     * @param bool $visibility
      * @return Layout
      */
-    public function duplicateAndHydrate($key, array $attributes = [])
+    public function duplicateAndHydrate($key, array $attributes = [], bool $visibility = true)
     {
         $fields = $this->fields->map(function ($field) {
             return $this->cloneField($field);
@@ -285,7 +305,8 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
             $key,
             $attributes,
             $this->removeCallbackMethod,
-            $this->limit
+            $this->limit,
+            $visibility
         );
         if (! is_null($this->model)) {
             $clone->setModel($this->model);
@@ -379,6 +400,8 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
             // the key with a new, stronger & definitive one.
             'key' => $this->inUseKey(),
 
+            'visibility' => $this->visibility(),
+
             // The layout's fields now temporarily contain the resolved
             // values from the current group's attributes. If multiple
             // groups use the same layout, the current values will be lost
@@ -396,6 +419,7 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
      */
     public function fill(ScopedRequest $request)
     {
+        $this->visibility = $request->visibility ?? true;
         return  $this->fields->map(function ($field) use ($request) {
             return $field->fill($request, $this);
         })
