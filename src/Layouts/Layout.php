@@ -146,7 +146,7 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
      * @param bool $visibility
      * @return void
      */
-    public function __construct($title = null, $name = null, $fields = null, $key = null, $attributes = [], ?callable $removeCallbackMethod = null, $visibility = true)
+    public function __construct($title = null, $name = null, $fields = null, $key = null, $attributes = [], ?callable $removeCallbackMethod = null, $limit = null, $visibility = true)
     {
         $this->title = $title ?? $this->title();
         $this->name = $name ?? $this->name();
@@ -154,6 +154,7 @@ class Layout implements LayoutInterface, JsonSerializable, ArrayAccess, Arrayabl
         $this->key = is_null($key) ? null : $this->getProcessedKey($key);
         $this->removeCallbackMethod = $removeCallbackMethod;
         $this->setRawAttributes($this->cleanAttributes($attributes));
+        $this->limit = $limit;
         $this->visibility = $visibility;
     }
 

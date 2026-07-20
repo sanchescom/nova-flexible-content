@@ -157,7 +157,7 @@ trait HasFlexible
             ? $layoutMapping[$name]
             : Layout::class;
 
-        $layout = new $classname($name, $name, [], $key, $attributes, null, $visibility);
+        $layout = new $classname($name, $name, [], $key, $attributes, null, null, $visibility);
 
         $model = is_a($this, FlexibleCast::class)
             ? $this->model
