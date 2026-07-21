@@ -149,6 +149,19 @@ class Flexible extends Field
     }
 
     /**
+     * Allow import and export of flexible groups.
+     *
+     * @return $this
+     */
+    public function allowImportExport($allowImport = true, $allowExport = true)
+    {
+        return $this->withMeta([
+            'allowImport' => $allowImport,
+            'allowExport' => $allowExport,
+        ]);
+    }
+
+    /**
      * Set the field's resolver
      *
      * @param  mixed  $resolver
