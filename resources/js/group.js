@@ -81,7 +81,12 @@ export default class Group {
    */
   renameFields() {
     for (var i = this.fields.length - 1; i >= 0; i--) {
-      this.fields[i].attribute = this.key + "__" + this.fields[i].attribute;
+      // Strip any existing "groupkey__" prefix before applying this group's key.
+      // Makes renaming idempotent so imported blocks (whose fields already carry
+      // the source group's prefix) get a single, correct prefix instead of a
+      // double one that the server can't map back to the layout.
+      this.fields[i].attribute =
+        this.key + "__" + this.fields[i].attribute.split("__").pop();
       this.fields[i].validationKey = this.fields[i].attribute;
 
       if (this.fields[i].dependsOn) {
