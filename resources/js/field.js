@@ -28,4 +28,8 @@ Nova.booting((app) => {
     "delete-flexible-content-group-modal",
     require("./components/DeleteGroupModal.vue").default,
   );
+  app.component(
+    "import-export-flexible-content-group-modal",
+    require("./components/ImportExportGroupModal.vue").default,
+  );
 });

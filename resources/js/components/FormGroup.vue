@@ -77,6 +77,37 @@
                 type="micro" />
             </button>
             <button
+              v-if="field.allowExport"
+              dusk="export-group"
+              type="button"
+              class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
+              :title="__('Export')"
+              @click.prevent="exportGroup(group)"
+            >
+              <Icon
+                name="arrow-up-tray"
+                type="micro"
+                class="align-top" />
+            </button>
+            <button
+              dusk="visible-group"
+              type="button"
+              class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
+              :title="group.visibility ? __('Hide') : __('Show')"
+              @click.prevent="toggleVisibility"
+            >
+              <Icon
+                v-if="group.visibility"
+                name="eye"
+                type="micro"
+                class="align-top" />
+              <Icon
+                v-else
+                name="eye-slash"
+                type="micro"
+                class="align-top" />
+            </button>
+            <button
               dusk="delete-group"
               type="button"
               class="group-control btn border-l border-gray-200 dark:border-gray-700 w-8 h-8 flex justify-center items-center"
@@ -95,6 +126,15 @@
               :message="field.confirmRemoveMessage"
               :yes="field.confirmRemoveYes"
               :no="field.confirmRemoveNo"
+            />
+
+            <import-export-flexible-content-group-modal
+              v-if="isExport"
+              @close="isExport = false"
+              :message="exportMessage"
+              ok="Ok"
+              :name="group.title"
+              title="Export group"
             />
           </div>
         </div>
@@ -131,11 +171,13 @@ export default {
     ...mapProps(["resourceName", "resourceId", "mode"]),
   },
 
-  emits: ["move-up", "move-down", "remove"],
+  emits: ["move-up", "move-down", "toggle-visibility", "remove"],
 
   data() {
     return {
       removeMessage: false,
+      isExport: false,
+      exportMessage: null,
       collapsed: this.group.collapsed,
       readonly: this.group.readonly,
     };
@@ -195,6 +237,28 @@ export default {
      */
     moveDown() {
       this.$emit("move-down");
+    },
+
+    /**
+     * Export the group to clipboard (sessionStorage)
+     */
+    exportGroup(group) {
+      try {
+        sessionStorage.setItem("exportImportGroup", JSON.stringify(group));
+
+        this.exportMessage = "block has been successfully exported";
+      } catch (error) {
+        this.exportMessage = "an error occurred while exporting the block";
+      } finally {
+        this.isExport = true;
+      }
+    },
+
+    /**
+     * Toggle group visibility
+     */
+    toggleVisibility() {
+      this.$emit("toggle-visibility");
     },
 
     /**

@@ -22,6 +22,7 @@
           :mode="mode"
           @move-up="moveUp(group.key)"
           @move-down="moveDown(group.key)"
+          @toggle-visibility="toggleVisibility(group.key)"
           @remove="remove(group.key)"
         />
       </div>
@@ -36,6 +37,16 @@
         :resource-name="resourceName"
         :resource-id="resourceId"
         @addGroup="addGroup($event)"
+        @importGroup="importGroup"
+      />
+
+      <import-export-flexible-content-group-modal
+        v-if="isImport"
+        @close="isImport = false"
+        :message="importMessage"
+        ok="Ok"
+        :name="groupName"
+        title="Import group"
       />
     </template>
   </component>
@@ -107,6 +118,9 @@ export default {
       groups: {},
       files: {},
       sortableInstance: null,
+      isImport: false,
+      importMessage: null,
+      groupName: null,
     };
   },
 
@@ -146,6 +160,7 @@ export default {
           layout: group.layout,
           key: group.key,
           attributes: group.attributes,
+          visibility: group.visibility,
         });
 
         // Attach the files for formData appending
@@ -209,6 +224,7 @@ export default {
           this.value[i].attributes,
           this.value[i].key,
           this.currentField.collapsed,
+          this.value[i].visibility,
         );
       }
     },
@@ -224,7 +240,7 @@ export default {
     /**
      * Append the given layout to flexible content's list
      */
-    addGroup(layout, attributes, key, collapsed) {
+    addGroup(layout, attributes, key, collapsed, visibility) {
       if (!layout) return;
 
       collapsed = collapsed || false;
@@ -237,6 +253,7 @@ export default {
           this.currentField,
           key,
           collapsed,
+          visibility,
         );
 
       this.groups[group.key] = group;
@@ -263,6 +280,52 @@ export default {
       if (index < 0 || index >= this.order.length - 1) return;
 
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
+    },
+
+    /**
+     * Import a group from clipboard (sessionStorage)
+     */
+    importGroup() {
+      try {
+        const text = sessionStorage.getItem("exportImportGroup");
+
+        if (!text) throw new Error("Nothing to import");
+
+        let group = null;
+
+        try {
+          group = JSON.parse(text);
+        } catch (error) {
+          throw new Error("Imported data does not look like a content block");
+        }
+
+        if (!group || !group.key) throw new Error("Invalid data");
+
+        this.groupName = group.title;
+
+        const isAllowedToImport = !!this.layouts.find(
+          (layout) => layout.name === group.name,
+        );
+
+        if (!isAllowedToImport)
+          throw new Error("block cannot be imported to this page");
+
+        this.addGroup(group, null, null, group.collapsed);
+
+        this.importMessage = "block has been successfully imported";
+      } catch (error) {
+        this.importMessage =
+          error.message || "an error occured while importing the block";
+      } finally {
+        this.isImport = true;
+      }
+    },
+
+    /**
+     * Toggle a group's visibility
+     */
+    toggleVisibility(key) {
+      this.groups[key].visibility = !this.groups[key].visibility;
     },
 
     /**

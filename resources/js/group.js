@@ -1,11 +1,12 @@
 export default class Group {
-  constructor(name, title, fields, field, key, collapsed = true) {
+  constructor(name, title, fields, field, key, collapsed = true, visibility = true) {
     this.name = name;
     this.title = title;
     this.fields = fields;
     this.key = key || this.getTemporaryUniqueKey(field.attribute);
     this.collapsed = collapsed;
     this.readonly = field.readonly;
+    this.visibility = visibility;
 
     this.renameFields();
   }
@@ -32,6 +33,7 @@ export default class Group {
       key: this.key,
       attributes: {},
       files: {},
+      visibility: this.visibility,
     };
 
     for (var item of this.values()) {
