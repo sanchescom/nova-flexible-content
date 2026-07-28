@@ -12,7 +12,7 @@
         <form-nova-flexible-content-group
           v-for="(group, groupIndex) in orderedGroups"
           :dusk="currentField.attribute + '-' + groupIndex"
-          :key="group.key"
+          :key="group.key + '-' + reorderNonce"
           :field="currentField"
           :group="group"
           :index="groupIndex"
@@ -121,6 +121,11 @@ export default {
       isImport: false,
       importMessage: null,
       groupName: null,
+      // Bumped on every reorder and mixed into each group's :key so Vue remounts
+      // the groups instead of moving their DOM nodes. Moving the DOM reloads
+      // iframe-based fields (TinyMCE) and wipes their content; a remount lets the
+      // fields re-initialise from their value instead (MARK-9137).
+      reorderNonce: 0,
     };
   },
 
@@ -269,6 +274,7 @@ export default {
       if (index <= 0) return;
 
       this.order.splice(index - 1, 0, this.order.splice(index, 1)[0]);
+      this.reorderNonce++;
     },
 
     /**
@@ -280,6 +286,7 @@ export default {
       if (index < 0 || index >= this.order.length - 1) return;
 
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
+      this.reorderNonce++;
     },
 
     /**
@@ -310,6 +317,12 @@ export default {
         if (!isAllowedToImport)
           throw new Error("block cannot be imported to this page");
 
+        // Give every nested flexible item a fresh key so the imported block's
+        // field attributes (and thus TinyMCE editor ids) don't collide with the
+        // block it was exported from — a duplicate id makes the copied editor
+        // silently fail to initialise (MARK-9137).
+        this.regenerateNestedFlexibleKeys(group);
+
         this.addGroup(group, null, null, group.collapsed);
 
         this.importMessage = "block has been successfully imported";
@@ -319,6 +332,50 @@ export default {
       } finally {
         this.isImport = true;
       }
+    },
+
+    /**
+     * Recursively assign a fresh key to every nested flexible-content item in an
+     * imported payload. Flexible items are stored as { layout, key, attributes },
+     * and their key drives the reconstructed field attributes (and TinyMCE editor
+     * ids). Reusing the exported keys collides those ids with the source block.
+     */
+    regenerateNestedFlexibleKeys(node) {
+      if (Array.isArray(node)) {
+        node.forEach((item) => this.regenerateNestedFlexibleKeys(item));
+        return;
+      }
+
+      if (!node || typeof node !== "object") {
+        return;
+      }
+
+      if (
+        typeof node.layout === "string" &&
+        typeof node.key === "string" &&
+        node.attributes &&
+        typeof node.attributes === "object"
+      ) {
+        node.key = this.generateFlexibleKey();
+      }
+
+      Object.values(node).forEach((value) =>
+        this.regenerateNestedFlexibleKeys(value),
+      );
+    },
+
+    /**
+     * Generate a unique flexible group key (mirrors Group.getTemporaryUniqueKey:
+     * a "c" prefix to keep it a valid HTML id + 15 random chars).
+     */
+    generateFlexibleKey() {
+      const charSet =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let key = "";
+      for (let i = 0; i < 15; i++) {
+        key += charSet.charAt(Math.floor(Math.random() * charSet.length));
+      }
+      return "c" + key;
     },
 
     /**
