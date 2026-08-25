@@ -12,7 +12,7 @@
         <form-nova-flexible-content-group
           v-for="(group, groupIndex) in orderedGroups"
           :dusk="currentField.attribute + '-' + groupIndex"
-          :key="group.key + '-' + reorderNonce"
+          :key="group.key"
           :field="currentField"
           :group="group"
           :index="groupIndex"
@@ -121,11 +121,6 @@ export default {
       isImport: false,
       importMessage: null,
       groupName: null,
-      // Bumped on every reorder and mixed into each group's :key so Vue remounts
-      // the groups instead of moving their DOM nodes. Moving the DOM reloads
-      // iframe-based fields (TinyMCE) and wipes their content; a remount lets the
-      // fields re-initialise from their value instead (MARK-9137).
-      reorderNonce: 0,
     };
   },
 
@@ -273,8 +268,8 @@ export default {
 
       if (index <= 0) return;
 
+      this.flushEditors();
       this.order.splice(index - 1, 0, this.order.splice(index, 1)[0]);
-      this.reorderNonce++;
     },
 
     /**
@@ -285,8 +280,23 @@ export default {
 
       if (index < 0 || index >= this.order.length - 1) return;
 
+      this.flushEditors();
       this.order.splice(index + 1, 0, this.order.splice(index, 1)[0]);
-      this.reorderNonce++;
+    },
+
+    /**
+     * Save any TinyMCE editor content into the underlying field values before a
+     * reorder. With a stable :key Vue MOVES the group DOM (instead of remounting
+     * it), which keeps nested flexible content, collapsed state and scroll
+     * position intact — but moving a TinyMCE iframe reloads it, so we flush its
+     * content to the value (v-model) first to guarantee no data is lost.
+     * MARK-9419: the previous remount-on-reorder (reorderNonce) fixed TinyMCE but
+     * wiped nested content, reset collapse and scrolled to the top.
+     */
+    flushEditors() {
+      if (window.tinymce) {
+        window.tinymce.triggerSave();
+      }
     },
 
     /**

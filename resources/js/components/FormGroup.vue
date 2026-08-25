@@ -284,6 +284,8 @@ export default {
      */
     expand() {
       this.collapsed = false;
+      // Keep the model in sync so the state survives any re-render (MARK-9419).
+      this.group.collapsed = false;
     },
 
     /**
@@ -291,6 +293,7 @@ export default {
      */
     collapse() {
       this.collapsed = true;
+      this.group.collapsed = true;
     },
   },
 };
